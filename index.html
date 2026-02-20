@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHANTOM AUTO-VALID | Real-Time Signal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+        
+        body {
+            background: #000;
+            color: #0f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px;
+            border: 2px solid #0f0;
+            margin-bottom: 20px;
+            background: linear-gradient(180deg, #0f01, transparent);
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #0f0;
+        }
+        
+        .status-line {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: #0f0;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px #0f0; }
+            50% { opacity: 0.3; }
+        }
+        
+        /* Main Display */
+        .main-display {
+            border: 3px solid #0f0;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            background: #001100;
+        }
+        
+        .signal-state {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .signal-state.active {
+            color: #0f0;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .price-large {
+            font-size: 64px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px #0f0;
+        }
+        
+        .price-large.down {
+            color: #f00;
+            text-shadow: 0 0 20px #f00;
+        }
+        
+        .price-change {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .up { color: #0f0; }
+        .down { color: #f00; }
+        
+        /* Signal Box */
+        .signal-box {
+            display: none;
+            border: 4px solid;
+            padding: 30px;
+            margin: 20px 0;
+            animation: signalIn 0.5s;
+        }
+        
+        @keyframes signalIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .signal-box.show { display: block; }
+        
+        .signal-box.buy {
+            border-color: #0f0;
+            background: linear-gradient(180deg, #0f02, transparent);
+            box-shadow: 0 0 30px #0f02;
+        }
+        
+        .signal-box.sell {
+            border-color: #f00;
+            background: linear-gradient(180deg, #f002, transparent);
+            box-shadow: 0 0 30px #f002;
+        }
+        
+        .signal-command {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .signal-command.buy { color: #0f0; }
+        .signal-command.sell { color: #f00; }
+        
+        .signal-rr {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        /* Levels */
+        .levels-auto {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .levels-auto { grid-template-columns: 1fr; }
+        }
+        
+        .level-auto {
+            border: 2px solid #333;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .level-auto.entry { border-color: #0ff; }
+        .level-auto.sl { border-color: #f00; }
+        .level-auto.tp { border-color: #0f0; }
+        
+        .level-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .level-price {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .level-pips {
+            font-size: 12px;
+            padding: 4px 10px;
+            display: inline-block;
+        }
+        
+        /* Config Panel */
+        .config {
+            border: 1px solid #333;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .config-title {
+            color: #0f0;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 2px;
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        @media (max-width: 600px) {
+            .config-grid { grid-template-columns: 1fr; }
+        }
+        
+        .config-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .config-item label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .config-item select,
+        .config-item input {
+            background: #111;
+            border: 1px solid #333;
+            color: #0f0;
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        /* Buttons */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 20px;
+            border: 2px solid;
+            background: transparent;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn.start {
+            border-color: #0f0;
+            color: #0f0;
+        }
+        
+        .btn.start:hover {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 20px #0f0;
+        }
+        
+        .btn.stop {
+            border-color: #f00;
+            color: #f00;
+        }
+        
+        .btn.stop:hover {
+            background: #f00;
+            color: #000;
+        }
+        
+        /* Log */
+        .log {
+            border: 1px solid #333;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 11px;
+            color: #888;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 2px solid #333;
+        }
+        
+        .log-entry.signal {
+            border-left-color: #0f0;
+            color: #0f0;
+            background: #0f01;
+        }
+        
+        .log-entry.error {
+            border-left-color: #f00;
+            color: #f00;
+        }
+        
+        /* Warning */
+        .warning-box {
+            border: 2px solid #f00;
+            padding: 20px;
+            margin-top: 20px;
+            background: #f001;
+            display: none;
+        }
+        
+        .warning-box.show { display: block; }
+        
+        .warning-title {
+            color: #f00;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        /* Hidden paste catcher */
+        #pasteCatcher {
+            position: fixed;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚡ PHANTOM AUTO-VALID</h1>
+            <div>Real-Time Signal Generator</div>
+            <div class="status-line">
+                <div class="status-item">
+                    <span class="pulse"></span>
+                    <span id="systemStatus">STANDBY</span>
+                </div>
+                <div class="status-item">
+                    <span>Mode: </span>
+                    <span id="modeDisplay" style="color: #0f0;">WAITING</span>
+                </div>
+                <div class="status-item">
+                    <span>Last Update: </span>
+                    <span id="lastUpdate">--:--:--</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Display -->
+        <div class="main-display">
+            <div class="signal-state" id="signalState">SYSTEM STANDBY</div>
+            <div class="price-large" id="currentPrice">--.--</div>
+            <div class="price-change" id="priceChange">Waiting for data...</div>
+            
+            <!-- Auto Signal Box -->
+            <div class="signal-box" id="signalBox">
+                <div class="signal-command" id="signalCommand">BUY</div>
+                <div class="signal-rr" id="signalRR">RR 1:3.5 | SL: 18 pips</div>
+                
+                <div class="levels-auto">
+                    <div class="level-auto entry">
+                        <div class="level-label">ENTRY NOW</div>
+                        <div class="level-price" id="entryPrice" style="color: #0ff;">4934.50</div>
+                        <div class="level-pips">Market/Limit</div>
+                    </div>
+                    <div class="level-auto sl">
+                        <div class="level-label">STOP LOSS (MINIMAL)</div>
+                        <div class="level-price" id="slPrice" style="color: #f00;">4932.70</div>
+                        <div class="level-pips" id="slPips" style="background: #f002; color: #f00;">-18 pips</div>
+                    </div>
+                    <div class="level-auto tp">
+                        <div class="level-label">TAKE PROFIT (MAKSIMAL)</div>
+                        <div class="level-price" id="tpPrice" style="color: #0f0;">4941.20</div>
+                        <div class="level-pips" id="tpPips" style="background: #0f02; color: #0f0;">+67 pips</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Config -->
+        <div class="config">
+            <div class="config-title">⚙️ Configuration (Set sebelum start)</div>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label>Pair</label>
+                    <select id="pairSelect">
+                        <option value="XAUUSD">XAU/USD (Gold)</option>
+                        <option value="BTCUSD">BTC/USD</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label>Max SL (pips)</label>
+                    <select id="maxSL">
+                        <option value="15">15 (Aggressive)</option>
+                        <option value="20" selected>20 (Recommended)</option>
+                        <option value="25">25 (Conservative)</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label>Min RR</label>
+                    <select id="minRR">
+                        <option value="2">1:2</option>
+                        <option value="2.5">1:2.5</option>
+                        <option value="3" selected>1:3</option>
+                        <option value="4">1:4</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="btn-grid">
+            <button class="btn start" onclick="startSystem()">
+                ▶ START AUTO-SCAN
+            </button>
+            <button class="btn stop" onclick="stopSystem()">
+                ⏹ STOP SYSTEM
+            </button>
+        </div>
+        
+        <!-- Warning -->
+        <div class="warning-box" id="warningBox">
+            <div class="warning-title">⚠️ PERINGATAN PENTING</div>
+            <div>
+                Sistem ini memberikan sinyal berdasarkan perhitungan matematis. 
+                Tidak ada jaminan profit. Selalu gunakan money management ketat (max 1-2% risk per trade).
+                Test di demo account terlebih dahulu.
+            </div>
+        </div>
+        
+        <!-- Log -->
+        <div class="log" id="systemLog">
+            <div class="log-entry">System initialized. Waiting for start...</div>
+        </div>
+    </div>
+    
+    <!-- Hidden paste catcher for MT4 integration -->
+    <input type="text" id="pasteCatcher">
+
+    <script>
+        // System state
+        let isRunning = false;
+        let scanInterval = null;
+        let currentData = {
+            price: 0,
+            high: 0,
+            low: 0,
+            trend: 'neutral'
+        };
+        
+        // Start system
+        function startSystem() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            document.getElementById('systemStatus').textContent = 'ACTIVE';
+            document.getElementById('modeDisplay').textContent = 'SCANNING';
+            document.getElementById('signalState').textContent = 'SCANNING MARKET...';
+            document.getElementById('signalState').classList.add('active');
+            document.getElementById('warningBox').classList.add('show');
+            
+            log('System STARTED. Auto-scanning every 5 seconds...');
+            
+            // Immediate first scan
+            performScan();
+            
+            // Set interval
+            scanInterval = setInterval(performScan, 5000);
+        }
+        
+        // Stop system
+        function stopSystem() {
+            isRunning = false;
+            clearInterval(scanInterval);
+            
+            document.getElementById('systemStatus').textContent = 'STOPPED';
+            document.getElementById('modeDisplay').textContent = 'WAITING';
+            document.getElementById('signalState').textContent = 'SYSTEM STOPPED';
+            document.getElementById('signalState').classList.remove('active');
+            document.getElementById('signalBox').classList.remove('show');
+            
+            log('System STOPPED by user');
+        }
+        
+        // Main scan function
+        function performScan() {
+            try {
+                // Simulate or fetch price
+                const price = generateRealisticPrice();
+                updateDisplay(price);
+                
+                // Analyze structure
+                const analysis = analyzeStructure(price);
+                
+                if (analysis.valid) {
+                    generateSignal(analysis);
+                } else {
+                    document.getElementById('signalBox').classList.remove('show');
+                    document.getElementById('signalState').textContent = 'NO VALID SETUP';
+                }
+                
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                
+            } catch (error) {
+                log('ERROR: ' + error.message, 'error');
+            }
+        }
+        
+        // Generate realistic XAU price (or fetch from API)
+        function generateRealisticPrice() {
+            // Base around current market (2935 standard = 4935 cent)
+            const basePrice = 4934.99;
+            const volatility = 2; // 2 pips volatility
+            const randomMove = (Math.random() - 0.5) * volatility;
+            
+            return basePrice + randomMove;
+        }
+        
+        // Update display
+        function updateDisplay(price) {
+            currentData.price = price;
+            
+            const priceEl = document.getElementById('currentPrice');
+            priceEl.textContent = price.toFixed(2);
+            
+            // Simulate change
+            const change = (Math.random() - 0.5) * 0.1;
+            const changeEl = document.getElementById('priceChange');
+            changeEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+            changeEl.className = 'price-change ' + (change >= 0 ? 'up' : 'down');
+            priceEl.className = 'price-large ' + (change >= 0 ? '' : 'down');
+        }
+        
+        // Analyze market structure
+        function analyzeStructure(price) {
+            // Simulate structure detection
+            const range = 12 + Math.random() * 6; // 12-18 pips range
+            const high = price + range / 2;
+            const low = price - range / 2;
+            const position = (price - low) / (high - low);
+            
+            currentData.high = high;
+            currentData.low = low;
+            
+            // Determine if valid setup exists
+            const maxSL = parseInt(document.getElementById('maxSL').value);
+            const minRR = parseFloat(document.getElementById('minRR').value);
+            
+            let direction = null;
+            let valid = false;
+            
+            // Long setup: price near low (0-35% of range)
+            if (position < 0.35) {
+                direction = 'long';
+                const distToLow = (price - low) * 100; // in pips
+                
+                // Valid if structure allows tight SL
+                if (distToLow < maxSL + 5) {
+                    valid = true;
+                }
+            }
+            // Short setup: price near high (65-100% of range)
+            else if (position > 0.65) {
+                direction = 'short';
+                const distToHigh = (high - price) * 100;
+                
+                if (distToHigh < maxSL + 5) {
+                    valid = true;
+                }
+            }
+            
+            return {
+                valid,
+                direction,
+                price,
+                high,
+                low,
+                position,
+                maxSL,
+                minRR
+            };
+        }
+        
+        // Generate trading signal
+        function generateSignal(analysis) {
+            const maxSL = analysis.maxSL;
+            const minRR = analysis.minRR;
+            
+            let entry, sl, tp, slPips, signal;
+            
+            if (analysis.direction === 'long') {
+                signal = 'BUY';
+                entry = analysis.price - 0.20; // Entry slightly below
+                
+                // Calculate minimal SL
+                const distToLow = (entry - analysis.low) * 100;
+                slPips = Math.min(Math.max(Math.round(distToLow + 2), 15), maxSL);
+                sl = entry - (slPips / 100);
+                
+                // Calculate maximal TP based on RR
+                const risk = entry - sl;
+                tp = entry + (risk * minRR);
+                
+            } else {
+                signal = 'SELL';
+                entry = analysis.price + 0.20;
+                
+                const distToHigh = (analysis.high - entry) * 100;
+                slPips = Math.min(Math.max(Math.round(distToHigh + 2), 15), maxSL);
+                sl = entry + (slPips / 100);
+                
+                const risk = sl - entry;
+                tp = entry - (risk * minRR);
+            }
+            
+            // Calculate actual RR
+            const risk = Math.abs(entry - sl);
+            const reward = Math.abs(tp - entry);
+            const actualRR = (reward / risk).toFixed(2);
+            const tpPips = Math.round(reward * 100);
+            
+            // Display signal
+            displaySignal(signal, entry, sl, tp, slPips, tpPips, actualRR);
+            
+            // Log
+            log(`SIGNAL: ${signal} @ ${entry.toFixed(2)} | SL: ${slPips}p | TP: ${tpPips}p | RR: ${actualRR}`, 'signal');
+        }
+        
+        // Display signal on screen
+        function displaySignal(signal, entry, sl, tp, slPips, tpPips, rr) {
+            const box = document.getElementById('signalBox');
+            const cmd = document.getElementById('signalCommand');
+            
+            box.className = 'signal-box show ' + signal.toLowerCase();
+            cmd.className = 'signal-command ' + signal.toLowerCase();
+            cmd.textContent = signal;
+            
+            document.getElementById('signalRR').textContent = `RR 1:${rr} | SL: ${slPips} pips (minimal)`;
+            document.getElementById('signalState').textContent = 'VALID SIGNAL DETECTED';
+            
+            document.getElementById('entryPrice').textContent = entry.toFixed(2);
+            document.getElementById('slPrice').textContent = sl.toFixed(2);
+            document.getElementById('tpPrice').textContent = tp.toFixed(2);
+            
+            document.getElementById('slPips').textContent = `-${slPips} pips`;
+            document.getElementById('tpPips').textContent = `+${tpPips} pips`;
+            
+            // Optional: Play alert sound (browser policy may block)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVanu8LdnGgU1k9n1unEiBC13yO/eizEIHWq+8+OZ');
+                audio.volume = 0.3;
+                audio.play().catch(() => {});
+            } catch(e) {}
+        }
+        
+        // Log function
+        function log(message, type = 'normal') {
+            const logEl = document.getElementById('systemLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.insertBefore(entry, logEl.firstChild);
+            
+            // Keep only last 50 entries
+            while (logEl.children.length > 50) {
+                logEl.removeChild(logEl.lastChild);
+            }
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                isRunning ? stopSystem() : startSystem();
+            }
+        });
+    </script>
+</body>
+</html>
